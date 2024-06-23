@@ -9,6 +9,11 @@
 
 #define BUF_SIZE 512
 char buf[BUF_SIZE];
+
+#define DEBUG_LOG_OPEN
+
+#define INIT_MEMBER(a) {a, #a}
+
 typedef enum
 {
     ERROR,
@@ -36,6 +41,11 @@ typedef enum
     LOGO_MINUTES_AND_SECONDS_STRING = 1<<5,
     LOGO_ROWS_STRING = 1<<6,
 }SHOW_HEAD_LOGO;
+typedef struct
+{
+    SHOW_HEAD_LOGO headLog;
+    char           headLogString[35];
+}SHOW_HEAD_CONFIG_STRUCT;
 typedef enum
 {
     PRINT_TERMINAL = 1<<0,
@@ -94,8 +104,8 @@ static DEBUG_CTRL_STRUCT debugCtrlConfig =
     },
     .debugShowHeadValue =
     {
-       // .debugShowHeadFlag = LOGO_LEVEL_STRING|LOGO_FILE_STRING|LOGO_FUNCTION_STRING|LOGO_ROWS_STRING,
-        .debugShowHeadFlag = 0xFFFF,
+       .debugShowHeadFlag = LOGO_LEVEL_STRING|LOGO_FILE_STRING|LOGO_FUNCTION_STRING|LOGO_ROWS_STRING,
+        // .debugShowHeadFlag = 0xFFFF,
     },
     .debugPrintExhibitValue =
     {
@@ -106,7 +116,9 @@ static DEBUG_CTRL_STRUCT debugCtrlConfig =
 
 static char *levelString[] = {"ERROR", "WARNING", "INFO", "DEBUG", " "};
 static char *printModuleName[] = {"app","fpga","sensor","net","other"};
-static SHOW_HEAD_LOGO headLog[] = {LOGO_LEVEL_STRING,LOGO_MODULE_STRING,LOGO_FILE_STRING,LOGO_FUNCTION_STRING,LOGO_YEAR_MONTH_DAY_STRING,LOGO_MINUTES_AND_SECONDS_STRING,LOGO_ROWS_STRING};
+static SHOW_HEAD_CONFIG_STRUCT headLog[] = {INIT_MEMBER(LOGO_LEVEL_STRING),INIT_MEMBER(LOGO_MODULE_STRING),INIT_MEMBER(LOGO_FILE_STRING),\
+                                            INIT_MEMBER(LOGO_FUNCTION_STRING),INIT_MEMBER(LOGO_YEAR_MONTH_DAY_STRING),\
+                                            INIT_MEMBER(LOGO_MINUTES_AND_SECONDS_STRING),INIT_MEMBER(LOGO_ROWS_STRING)};
 static unsigned int debugPrintHeadPack(char *buffer, int bufferSize, unsigned int *written, const char *format, ...)
 {
     va_list args;
@@ -121,7 +133,7 @@ static unsigned int debugPrintHeadPack(char *buffer, int bufferSize, unsigned in
     return length;
 }
 
-static int firstCalculateBitPos(MODULE_NAME num)
+static int firstCalculateBitPos(unsigned int num)
 {
     int pos = 0;
     while (((num) & (1 << pos)) == 0) pos++;
@@ -162,7 +174,6 @@ static void debugPrintSavePosition(const char *debugBuf)
         fseek(file, 0, SEEK_END);
         // long fileSize = ftell(file);
         // if (fileSize == 0) {
-        //     // 文件为空，可以在这里写入文件头部信息，如果需要的话
         // }
         if (fputs(debugBuf, file) == EOF) {
             perror("Failed to write to file");
@@ -202,13 +213,13 @@ void logPrint(PRINT_LEVEL printLevel, MODULE_NAME moduleLevel, const char *fileN
     //判断显示的头部标识信息内容
     for(int i=0;i<sizeof(headLog)/sizeof(SHOW_HEAD_LOGO);i++)
     {
-        switch(debugCtrlConfig.debugShowHeadValue.debugShowHeadFlag & headLog[i])
+        switch(debugCtrlConfig.debugShowHeadValue.debugShowHeadFlag & headLog[i].headLog)
         {
             case LOGO_LEVEL_STRING:
                 debugPrintHeadPack(buf, BUF_SIZE, &length, "%s ", levelString[printLevel]);
                 break;
             case LOGO_MODULE_STRING:
-                debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", printModuleName[firstCalculateBitPos(moduleLevel)]);
+                debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", printModuleName[firstCalculateBitPos((unsigned int)moduleLevel)]);
                 break;
             case LOGO_FILE_STRING:
                 debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", fileName);
@@ -245,24 +256,63 @@ void logPrint(PRINT_LEVEL printLevel, MODULE_NAME moduleLevel, const char *fileN
     debugPrintSavePosition(buf);
     return;
 }
-
-#define LOG(...) \
-            logPrint(INFO, OTHER, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
-
-#define DEBUG_LOG(level, module, ...) \
-            logPrint(level, module, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
-
-
-void init_debug()
+void init_debug(char *path)
 {
-    strcpy(debugCtrlConfig.logFilePath, "./log_print.txt");
-    // memcpy(debugCtrlConfig.logFilePath, "");
-    // strcpy_s();
+    strcpy(debugCtrlConfig.logFilePath, path);
+}
+/*打印当前的参数配置情况*/
+void logPrintSettingInfo()
+{
+    int i,j;
+    printf("-------------------current debug setting---------------------\n");
+    printf("debug level:\n");
+    printf("\t%s\n", levelString[debugCtrlConfig.level]);
+    printf("debug module:\n\t");
+    for(i=0; i<sizeof(printModuleName)/sizeof(printModuleName[0]);i++)
+    {
+        if((1<<i) == (debugCtrlConfig.debugModuleFlagValue.debugModuleFlag & (1<<i)))
+        {
+            printf("%s ", printModuleName[i]);
+        }
+    }
+    printf("\ndebug show head:\n\t");
+    for(i=0,j=0; i<sizeof(headLog)/sizeof(headLog[0]);i++)
+    {
+        if((headLog[i].headLog) == (debugCtrlConfig.debugShowHeadValue.debugShowHeadFlag & (headLog[i].headLog)))
+        {
+            j++;
+            printf("%s_string ", headLog[i].headLogString);
+            if(j%4 == 0)
+            {
+                printf("\n\t");
+            }
+        }
+    }
+    printf("\ndebug print exhibit:\n\t");
+    if(PRINT_TERMINAL == (debugCtrlConfig.debugPrintExhibitValue.debugPrintExhibitFlag & PRINT_TERMINAL))
+    {
+        printf("PRINT_TERMINAL ");
+    }
+    if(PRINT_FLASH == (debugCtrlConfig.debugPrintExhibitValue.debugPrintExhibitFlag & PRINT_FLASH))
+    {
+        printf("PRINT_TERMINAL:%s", debugCtrlConfig.logFilePath);
+    }
+    printf("\n----------------------------end----------------------------\n");
 }
 
 
+#define LOG(...) \
+logPrint(INFO, OTHER, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+
+#ifdef DEBUG_LOG_OPEN
+#define DEBUG_LOG(level, module, ...) \
+    logPrint(level, module, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+#else
+    #define DEBUG_LOG(level, module, ...)
+#endif
+
 int main() {
-    init_debug();
+    init_debug("./log_print.txt");
    // LOG("------===%s==%d--%f\n","debug",123,56.34);
     DEBUG_LOG(ERROR,APP,"=============%d\n", 1);
     DEBUG_LOG(WARNING,APP,"=============%d\n", 1);
@@ -270,6 +320,6 @@ int main() {
     DEBUG_LOG(DEBUG,APP,"=============%d\n", 1);
     DEBUG_LOG(DEBUG,SENSOR,"=============%d\n", 1);
     DEBUG_LOG(DEBUG,NET,"=============%d\n", 1);
-
+    logPrintSettingInfo();
     return 0;
 }
