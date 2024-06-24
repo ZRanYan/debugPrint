@@ -1,4 +1,6 @@
-QT = core
+QT += core
+
+LIBS += -lrt
 
 CONFIG += c++17 cmdline
 
