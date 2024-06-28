@@ -102,11 +102,32 @@ DEBUG_LOG(APP, ERROR, "----%d---%f--%s-\n", 1, 1.1, "hellow");//开始使用
 
 ```c
 #define DEBUG_LOG_OPEN 			//配置宏开关
-#define BUF_SIZE 1024 			//单条debug打印内容512字节
+#define BUF_SIZE 1024 			//单条debug打印内容
 #define ARRAY_SIZE 512			//缓存池队列对象数量
 #define FILE_NAME_LENGTH 20		//显示文件名字长度
 #define FUNC_NAME_LENGTH 30		//显示函数名字
 #define PRINT_MESS_LENGTH 512	//单次打印内容
 #define LOG_FILE_PATH_LENGTH 50	//保存日志文件的路径长度
 ```
+
+### 关键函数说明
+
+* `logPrintSettingInfo`函数打印目前的配置参数信息,包含git版本信息，程序编译时间，打印配置参数信息，打印如下:
+
+  ```bash
+  -------------------current debug setting---------------------
+  git branch:main	 commitId:2e3ffce	 date:2024-06-28 22:09:57
+  debug level:
+  	DEBUG
+  debug module:
+  	app fpga sensor net other 
+  debug show head:
+  	LOGO_LEVEL_STRING_string LOGO_MODULE_STRING_string LOGO_FILE_STRING_string LOGO_FUNCTION_STRING_string 
+  	LOGO_YEAR_MONTH_DAY_STRING_string LOGO_MINUTES_AND_SECONDS_STRING_string LOGO_ROWS_STRING_string 
+  debug print exhibit:
+  	PRINT_TERMINAL PRINT_TERMINAL:
+  ----------------------------end----------------------------
+  ```
+
+  
 

@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <sched.h>
 
+#include "version.h"
 
 #define DEBUG_LOG_OPEN
 #define BUF_SIZE 1024
@@ -174,40 +175,41 @@ static SHOW_HEAD_CONFIG_STRUCT headLog[] = {INIT_MEMBER(LOGO_LEVEL_STRING), INIT
 void logPrintSettingInfo()
 {
     int i, j;
-    qDebug("-------------------current debug setting---------------------\n");
-    qDebug("debug level:\n");
-    qDebug("\t%s\n", levelString[debugCtrlConfig.level]);
-    qDebug("debug module:\n\t");
+    printf("-------------------current debug setting---------------------\n");
+    printf("git branch:%s\t commitId:%s\t date:%s\n",GIT_BRANCH, GIT_COMMIT, PROGRAM_DATE);
+    printf("debug level:\n");
+    printf("\t%s\n", levelString[debugCtrlConfig.level]);
+    printf("debug module:\n\t");
     for (i = 0; i < sizeof(printModuleName) / sizeof(printModuleName[0]); i++)
     {
         if ((1 << i) == (debugCtrlConfig.debugModuleFlagValue.debugModuleFlag & (1 << i)))
         {
-            qDebug("%s ", printModuleName[i]);
+            printf("%s ", printModuleName[i]);
         }
     }
-    qDebug("\ndebug show head:\n\t");
+    printf("\ndebug show head:\n\t");
     for (i = 0, j = 0; i < sizeof(headLog) / sizeof(headLog[0]); i++)
     {
         if ((headLog[i].headLog) == (debugCtrlConfig.debugShowHeadValue.debugShowHeadFlag & (headLog[i].headLog)))
         {
             j++;
-            qDebug("%s_string ", headLog[i].headLogString);
+            printf("%s_string ", headLog[i].headLogString);
             if (j % 4 == 0)
             {
-                qDebug("\n\t");
+                printf("\n\t");
             }
         }
     }
-    qDebug("\ndebug print exhibit:\n\t");
+    printf("\ndebug print exhibit:\n\t");
     if (PRINT_TERMINAL == (debugCtrlConfig.debugPrintExhibitValue.debugPrintExhibitFlag & PRINT_TERMINAL))
     {
-        qDebug("PRINT_TERMINAL ");
+        printf("PRINT_TERMINAL ");
     }
     if (PRINT_FLASH == (debugCtrlConfig.debugPrintExhibitValue.debugPrintExhibitFlag & PRINT_FLASH))
     {
-        qDebug("PRINT_TERMINAL:%s", debugCtrlConfig.logFilePath);
+        printf("logFile save:%s", debugCtrlConfig.logFilePath);
     }
-    qDebug("\n----------------------------end----------------------------\n");
+    printf("\n----------------------------end----------------------------\n");
 }
 
 static unsigned int debugPrintHeadPack(char *buffer, int bufferSize, unsigned int *written, const char *format, ...)
@@ -535,7 +537,7 @@ void debugTest()
     pthread_t threads[NUM_THREADS];
     int rc;
     int t;
-    init_debug("./log_print.txt");
+    
     for (t = 0; t < NUM_THREADS; t++)
     {
         printf("Creating thread %ld\n", t + 1);
@@ -555,8 +557,9 @@ void debugTest()
 }
 int main()
 {
-
-    debugTest();
+    init_debug("./log_print.txt");
+    // debugTest();
+    logPrintSettingInfo();
     sleep(1);
     return 0;
 }
