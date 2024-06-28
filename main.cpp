@@ -164,19 +164,62 @@ static DEBUG_CTRL_STRUCT debugCtrlConfig =
         // .logFilePath = "./log_print.txt"
         .logFileSize = 1024000 * 2,
 };
-
+static time_t programStartTime;
+static char programStartTimeBuff[20];
 static char *levelString[] = {"ERROR", "WARNING", "INFO", "DEBUG", " "};
 static char *printModuleName[] = {"app", "fpga", "sensor", "net", "other"};
 static SHOW_HEAD_CONFIG_STRUCT headLog[] = {INIT_MEMBER(LOGO_LEVEL_STRING), INIT_MEMBER(LOGO_MODULE_STRING), INIT_MEMBER(LOGO_FILE_STRING),
                                             INIT_MEMBER(LOGO_FUNCTION_STRING), INIT_MEMBER(LOGO_YEAR_MONTH_DAY_STRING),
                                             INIT_MEMBER(LOGO_MINUTES_AND_SECONDS_STRING), INIT_MEMBER(LOGO_ROWS_STRING)};
 
+static void getNowTime(char *buf, int bufLength, time_t *now)
+{
+    if(NULL == now)
+    {
+        return;
+    }
+    struct tm *info;
+    time(now);
+    info = localtime(now);
+    //sinfo->tm_hour = (info->tm_hour)+8;
+    if(NULL != buf && 0 < bufLength)
+        strftime(buf, bufLength, "%Y-%m-%d %H:%M:%S", info);
+    return;
+}
+
+void convertSecondsToTimeFormat(double seconds,char *buf, int length)
+{
+    int years, months, days, hours, minutes;
+    double remaining_seconds;
+    years = months = days = hours = minutes = 0;
+    minutes = (int)(seconds / 60);
+    remaining_seconds = fmod(seconds, 60);
+    hours = minutes / 60;
+    minutes %= 60;
+    days = hours / 24;
+    hours %= 24;
+    months = days / 30; // 简单起见，假设每个月30天
+    days %= 30;
+    years = months / 12;
+    months %= 12;
+    snprintf(buf, length, "%d-%d-%d %d:%d:%0.2f", years, months, days, hours, minutes, remaining_seconds);
+    return;
+}
+
 /*打印当前的参数配置情况*/
 void logPrintSettingInfo()
 {
     int i, j;
+    char timeBuf[20];
+    time_t currentTime;
+    struct tm *info;
+    getNowTime(NULL, 0, &currentTime);
+    double sec = difftime(currentTime, programStartTime);
+    convertSecondsToTimeFormat(sec, timeBuf, 20);
     printf("-------------------current debug setting---------------------\n");
     printf("git branch:%s\t commitId:%s\t date:%s\n",GIT_BRANCH, GIT_COMMIT, PROGRAM_DATE);
+    printf("program start time:%s \n", programStartTimeBuff);
+    printf("survival time:%0.2fs  %s\n", sec, timeBuf);
     printf("debug level:\n");
     printf("\t%s\n", levelString[debugCtrlConfig.level]);
     printf("debug module:\n\t");
@@ -508,6 +551,7 @@ void *receiver_thread(void *arg)
 void init_debug(char *path)
 {
     static pthread_t receiver_tid;
+    getNowTime(programStartTimeBuff, sizeof(programStartTimeBuff), &programStartTime);
     strcpy(debugCtrlConfig.logFilePath, path);
     pthread_create(&receiver_tid, NULL, receiver_thread, NULL);
     debugMqData.readIndex = 0;
@@ -559,7 +603,11 @@ int main()
 {
     init_debug("./log_print.txt");
     // debugTest();
-    logPrintSettingInfo();
-    sleep(1);
+    for(int i=0;i<61;i++)
+    {
+        sleep(1);
+        logPrintSettingInfo();
+    }
+    
     return 0;
 }
