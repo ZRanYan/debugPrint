@@ -116,18 +116,20 @@ DEBUG_LOG(APP, ERROR, "----%d---%f--%s-\n", 1, 1.1, "hellow");//开始使用
 
   ```bash
   -------------------current debug setting---------------------
-  git branch:main	 commitId:2e3ffce	 date:2024-06-28 22:09:57
+  git branch:main	 commitId:442eb71	 date:2024-07-06 15:33:45
+  program start time:2024-07-06 15:33:51 
+  survival time:2.00s  0-0-0 0:0:2.00
   debug level:
   	DEBUG
   debug module:
-  	app fpga sensor net other 
+  	app fpga sensor net alg other 
   debug show head:
   	LOGO_LEVEL_STRING_string LOGO_MODULE_STRING_string LOGO_FILE_STRING_string LOGO_FUNCTION_STRING_string 
   	LOGO_YEAR_MONTH_DAY_STRING_string LOGO_MINUTES_AND_SECONDS_STRING_string LOGO_ROWS_STRING_string 
   debug print exhibit:
-  	PRINT_TERMINAL PRINT_TERMINAL:
+  	PRINT_TERMINAL logFile save:./log_print.txt
   ----------------------------end----------------------------
   ```
-
+  
   
 
