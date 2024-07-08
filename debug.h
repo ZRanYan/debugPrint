@@ -46,7 +46,9 @@ typedef enum
     FPGA = 1 << 1,
     SENSOR = 1 << 2,
     NET = 1 << 3,
-    OTHER = 1 << 4
+    ALG = 1<<4,
+    PIC = 1<<5,
+    OTHER = 1 << 6
 } MODULE_NAME;
 typedef enum
 {
@@ -82,7 +84,8 @@ typedef struct
             unsigned short int bit3_sensor : 1;
             unsigned short int bit4_net : 1;
             unsigned short int bit5_alg : 1;
-            unsigned short int bit6_other : 1;
+            unsigned short int bit6_pic : 1;
+            unsigned short int bit7_other : 1;
         } bitField;
     } debugModuleFlagValue;
     union
@@ -141,6 +144,15 @@ typedef struct
     pthread_mutex_t mutex_wirte;
     DEBUG_MQ_MESSAGE_STRUCT data[ARRAY_SIZE];
 } DEBUG_MQ_STRUCT;
+
+typedef struct
+{
+    MODULE_NAME moduleName;
+    char printString[10];
+}MODULE_NAME_STRUCT;
+
+
+void logPrint(PRINT_LEVEL printLevel, MODULE_NAME moduleLevel, const char *fileName, const char *funcName, const int lineNum, const char *fmt, ...);
 
 #define LOG(...) \
 logPrint(INFO, OTHER, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)

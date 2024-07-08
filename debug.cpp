@@ -31,7 +31,17 @@ static DEBUG_CTRL_STRUCT debugCtrlConfig =
 static time_t programStartTime;
 static char programStartTimeBuff[20];
 static char *levelString[] = {"ERROR", "WARNING", "INFO", "DEBUG", " "};
-static char *printModuleName[] = {"app", "fpga", "sensor", "net", "alg","other"};
+// static char *printModuleName[] = {"app", "fpga", "sensor", "net", "alg","other"};
+static MODULE_NAME_STRUCT printModuleString[] = 
+{
+    {APP, "app"},
+    {FPGA, "fpga"},
+    {SENSOR, "sensor"},
+    {NET, "net"},
+    {ALG, "alg"},
+    {PIC, "pic"},
+    {OTHER, "other"}
+};
 static SHOW_HEAD_CONFIG_STRUCT headLog[] = {INIT_MEMBER(LOGO_LEVEL_STRING), INIT_MEMBER(LOGO_MODULE_STRING), INIT_MEMBER(LOGO_FILE_STRING),
                                             INIT_MEMBER(LOGO_FUNCTION_STRING), INIT_MEMBER(LOGO_YEAR_MONTH_DAY_STRING),
                                             INIT_MEMBER(LOGO_MINUTES_AND_SECONDS_STRING), INIT_MEMBER(LOGO_ROWS_STRING)};
@@ -87,11 +97,11 @@ void logPrintSettingInfo()
     printf("debug level:\n");
     printf("\t%s\n", levelString[debugCtrlConfig.level]);
     printf("debug module:\n\t");
-    for (i = 0; i < sizeof(printModuleName) / sizeof(printModuleName[0]); i++)
+    for (i = 0; i < sizeof(printModuleString) / sizeof(printModuleString[0]); i++)
     {
         if ((1 << i) == (debugCtrlConfig.debugModuleFlagValue.debugModuleFlag & (1 << i)))
         {
-            printf("%s ", printModuleName[i]);
+            printf("%s ", printModuleString[i].printString);
         }
     }
     printf("\ndebug show head:\n\t");
@@ -304,29 +314,13 @@ void logDataProcess(DEBUG_MQ_MESSAGE_STRUCT *data)
     }
     if (debugCtrlConfig.debugShowHeadValue.bitField.bit2_module)
     {
-        if (debugCtrlConfig.debugModuleFlagValue.bitField.bit1_app)
+        for (int i = 0; i < (sizeof(printModuleString) / sizeof(printModuleString[0])); i++)
         {
-            debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", printModuleName[0]);
-        }
-        else if (debugCtrlConfig.debugModuleFlagValue.bitField.bit2_fpga)
-        {
-            debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", printModuleName[1]);
-        }
-        else if (debugCtrlConfig.debugModuleFlagValue.bitField.bit3_sensor)
-        {
-            debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", printModuleName[2]);
-        }
-        else if (debugCtrlConfig.debugModuleFlagValue.bitField.bit4_net)
-        {
-            debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", printModuleName[3]);
-        }
-        else if (debugCtrlConfig.debugModuleFlagValue.bitField.bit5_alg)
-        {
-            debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", printModuleName[4]);
-        }
-        else if(debugCtrlConfig.debugModuleFlagValue.bitField.bit6_other)
-        {
-            debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", printModuleName[5]);
+            if(printModuleString[i].moduleName == (data->printModuleName&debugCtrlConfig.debugModuleFlagValue.debugModuleFlag))
+            {
+                debugPrintHeadPack(buf, BUF_SIZE, &length, "[%s]", printModuleString[i].printString);
+                break;
+            }
         }
     }
     if (debugCtrlConfig.debugShowHeadValue.bitField.bit3_file)
